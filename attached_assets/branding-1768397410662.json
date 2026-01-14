@@ -1,0 +1,83 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "sans-serif",
+      "count": 99
+    },
+    {
+      "family": "IBM Plex Sans",
+      "count": 85
+    },
+    {
+      "family": "ABC Diatype Variable",
+      "count": 14
+    }
+  ],
+  "colors": {
+    "primary": "#2492FF",
+    "accent": "#DD5806",
+    "background": "#FCFCFC",
+    "textPrimary": "#DD5806",
+    "link": "#DD5806"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "IBM Plex Sans",
+      "heading": "IBM Plex Sans"
+    },
+    "fontStacks": {
+      "body": [
+        "IBM Plex Sans",
+        "sans-serif"
+      ],
+      "heading": [
+        "IBM Plex Sans",
+        "sans-serif"
+      ],
+      "paragraph": [
+        "IBM Plex Sans",
+        "sans-serif"
+      ]
+    },
+    "fontSizes": {
+      "h1": "32px",
+      "h2": "32px",
+      "body": "14px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "4px"
+  },
+  "components": {},
+  "images": {
+    "logo": "File saved at: attached_assets/logo.svg",
+    "favicon": "File saved at: attached_assets/favicon.png",
+    "ogImage": "File saved at: attached_assets/ogImage.png"
+  },
+  "__framework_hints": [],
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Strong indicators: header logo linking to homepage, header location, visible, top-left position, src contains logo, reasonable size, SVG format. Score: 108 (clear winner by 60 points)",
+    "confidence": 0.9
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}

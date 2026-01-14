@@ -30,8 +30,8 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --radius: 0.75rem;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --radius: 0.25rem; /* 4px matches Replit branding */
   
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -56,55 +56,58 @@
   }
 }
 
-/* LIGHT MODE */
+/* LIGHT MODE - Replit Inspired */
 :root {
-  /* Clean, soft background */
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  /* Replit Background #FCFCFC */
+  --background: 0 0% 98.8%;
+  /* Replit Text Dark (standard for readability) */
+  --foreground: 220 13% 18%; /* Dark Gray */
 
-  /* Crisp white cards */
+  /* White cards */
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 220 13% 18%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 220 13% 18%;
 
-  /* Friendly Primary Blue/Indigo */
-  --primary: 221 83% 53%;
-  --primary-foreground: 210 40% 98%;
+  /* Replit Blue Primary #2492FF */
+  --primary: 210 100% 57%;
+  --primary-foreground: 0 0% 100%;
 
-  /* Soft Secondary */
+  /* Replit Secondary (lighter grays) */
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222 47% 11.2%;
 
   --muted: 210 40% 96.1%;
   --muted-foreground: 215 16% 47%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222 47% 11.2%;
+  /* Replit Accent Orange #DD5806 (for specific accents) */
+  --accent: 23 93% 45%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
 
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 221 83% 53%;
+  --ring: 210 100% 57%; /* Blue ring */
 
-  --radius: 1rem;
+  --radius: 0.25rem;
 }
 
 .dark {
+  /* Dark mode fallback if user switches system pref, keeping consistent with Replit Dark */
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
 
-  --card: 222 47% 11%;
+  --card: 217 33% 17%;
   --card-foreground: 210 40% 98%;
 
   --popover: 222 47% 11%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 217 91% 60%;
-  --primary-foreground: 222 47% 11%;
+  --primary: 210 100% 57%;
+  --primary-foreground: 0 0% 100%;
 
   --secondary: 217 19% 27%;
   --secondary-foreground: 210 40% 98%;
@@ -112,7 +115,7 @@
   --muted: 217 19% 27%;
   --muted-foreground: 215 20% 65%;
 
-  --accent: 217 19% 27%;
+  --accent: 23 93% 45%;
   --accent-foreground: 210 40% 98%;
 
   --destructive: 0 62.8% 30.6%;
@@ -120,7 +123,7 @@
 
   --border: 217 19% 27%;
   --input: 217 19% 27%;
-  --ring: 224 76% 48%;
+  --ring: 210 100% 57%;
 }
 
 @layer base {
