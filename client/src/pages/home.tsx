@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, CheckCircle2, AlertCircle, Youtube, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Youtube, ArrowRight, Download, ExternalLink } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,18 @@ const formSchema = z.object({
 
 type ProcessState = "idle" | "processing" | "success" | "error";
 
+interface ProcessResult {
+  filename: string;
+  content: string;
+  gdrive: boolean;
+  gdriveLink?: string;
+  language: string;
+}
+
 export default function Home() {
   const [status, setStatus] = useState<ProcessState>("idle");
   const [statusMessage, setStatusMessage] = useState("");
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<ProcessResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -54,11 +62,14 @@ export default function Home() {
         throw new Error(data.error || data.details || "Failed to process video");
       }
 
-      setStatusMessage("Syncing to Ragie knowledge base...");
-      await new Promise(r => setTimeout(r, 800));
-
       setStatus("success");
-      setResult(data.filename);
+      setResult({
+        filename: data.filename,
+        content: data.content,
+        gdrive: data.gdrive,
+        gdriveLink: data.gdriveLink,
+        language: data.language,
+      });
       form.reset();
     } catch (error: any) {
       setStatus("error");
@@ -86,7 +97,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-3 text-lg text-muted-foreground font-medium">
           <span className="flex items-center gap-1.5"><Youtube className="w-5 h-5 text-red-600" /> YouTube</span>
           <ArrowRight className="w-4 h-4 text-muted-foreground/50" />
-          <span className="flex items-center gap-1.5 text-accent">Ragie AI</span>
+          <span className="flex items-center gap-1.5 text-accent">Google Drive</span>
         </div>
       </motion.div>
 
@@ -170,22 +181,57 @@ export default function Home() {
                 </motion.div>
               )}
 
-              {status === "success" && (
+              {status === "success" && result && (
                 <motion.div
                   key="success"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-col items-center gap-2 text-green-600 dark:text-green-500"
+                  className="flex flex-col items-center gap-3 w-full"
                   data-testid="status-success"
                 >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-semibold text-sm">Successfully Synced!</span>
-                  </div>
+                  {result.gdrive ? (
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span className="font-semibold text-sm">Uploaded to Google Drive</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
+                      <AlertCircle className="w-5 h-5" />
+                      <span className="font-semibold text-sm">Drive upload failed - download manually</span>
+                    </div>
+                  )}
                   <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded border border-border" data-testid="text-filename">
-                    {result}
+                    {result.filename} ({result.language})
                   </code>
+                  <div className="flex gap-2 mt-1">
+                    {result.gdrive && result.gdriveLink && (
+                      <a
+                        href={result.gdriveLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Open in Drive
+                      </a>
+                    )}
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([result.content], { type: "text/markdown" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = result.filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border border-border bg-background hover:bg-muted transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download .md
+                    </button>
+                  </div>
                 </motion.div>
               )}
 
@@ -210,7 +256,7 @@ export default function Home() {
         </Card>
       </motion.div>
 
-      <motion.footer 
+      <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
@@ -218,7 +264,7 @@ export default function Home() {
       >
         <p className="text-sm text-muted-foreground flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-          Syncs to Ragie automatically
+          Uploads to Google Drive automatically
         </p>
       </motion.footer>
     </div>

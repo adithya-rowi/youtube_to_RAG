@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { YoutubeTranscript } from "youtube-transcript";
 import { insertTranscriptSchema } from "@shared/schema";
 import { z } from "zod";
+import { uploadToDrive } from "./driveService";
 
 const processRequestSchema = z.object({
   url: z.string().url(),
@@ -22,8 +23,29 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid YouTube URL" });
       }
 
-      const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-      
+      // Try Indonesian first, then fall back to any available
+      let transcriptItems;
+      let language = "unknown";
+
+      // Priority: manual Indonesian -> auto Indonesian -> any available
+      const langPriority = ["id", "id-ID"];
+
+      for (const lang of langPriority) {
+        try {
+          transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang });
+          language = lang;
+          break;
+        } catch {
+          // Continue to next language
+        }
+      }
+
+      // Fall back to default if Indonesian not available
+      if (!transcriptItems) {
+        transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+        language = "default";
+      }
+
       if (!transcriptItems || transcriptItems.length === 0) {
         return res.status(404).json({ error: "No transcript available for this video" });
       }
@@ -32,7 +54,23 @@ export async function registerRoutes(
         .map((item) => item.text)
         .join(" ");
 
-      const filename = `transcript_${videoId}_${Date.now()}.txt`;
+      const filename = `transcript_${videoId}_${Date.now()}.md`;
+
+      // Format as markdown
+      const markdownContent = `# YouTube Transcript
+
+**Video ID:** ${videoId}
+**URL:** ${url}
+**Language:** ${language}
+**Extracted:** ${new Date().toISOString()}
+
+---
+
+${transcriptText}
+`;
+
+      // Try uploading to Google Drive
+      const driveResult = await uploadToDrive(markdownContent, filename);
 
       const savedTranscript = await storage.createTranscript({
         youtubeUrl: url,
@@ -40,13 +78,19 @@ export async function registerRoutes(
         videoTitle: null,
         transcriptText,
         filename,
-        status: "success",
+        status: driveResult.success ? "success" : "local_only",
       });
 
       return res.json({
         success: true,
         filename,
         transcriptId: savedTranscript.id,
+        content: markdownContent,
+        language,
+        gdrive: driveResult.success,
+        gdriveFileId: driveResult.fileId,
+        gdriveLink: driveResult.webViewLink,
+        gdriveError: driveResult.error,
       });
     } catch (error: any) {
       console.error("Error processing transcript:", error);
