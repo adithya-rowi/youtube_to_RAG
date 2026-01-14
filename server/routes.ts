@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
-import { YoutubeTranscript } from "youtube-transcript";
+import { fetchTranscript } from "youtube-transcript-plus";
 import { insertTranscriptSchema } from "@shared/schema";
 import { z } from "zod";
 import { uploadToDrive } from "./driveService";
@@ -32,7 +32,7 @@ export async function registerRoutes(
 
       for (const lang of langPriority) {
         try {
-          transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang });
+          transcriptItems = await fetchTranscript(videoId, { lang });
           language = lang;
           break;
         } catch {
@@ -42,7 +42,7 @@ export async function registerRoutes(
 
       // Fall back to default if Indonesian not available
       if (!transcriptItems) {
-        transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+        transcriptItems = await fetchTranscript(videoId);
         language = "default";
       }
 
