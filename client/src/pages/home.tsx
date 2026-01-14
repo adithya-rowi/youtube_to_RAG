@@ -11,7 +11,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 
-// Form Schema
 const formSchema = z.object({
   url: z.string().url({ message: "Please enter a valid YouTube URL" }).refine((val) => val.includes("youtube.com") || val.includes("youtu.be"), {
     message: "Must be a YouTube link",
@@ -24,6 +23,7 @@ export default function Home() {
   const [status, setStatus] = useState<ProcessState>("idle");
   const [statusMessage, setStatusMessage] = useState("");
   const [result, setResult] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,24 +35,34 @@ export default function Home() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setStatus("processing");
     setResult(null);
+    setErrorMessage("");
 
     try {
-      // Mock processing steps
-      setStatusMessage("Downloading audio stream...");
-      await new Promise(r => setTimeout(r, 1500));
+      setStatusMessage("Fetching YouTube transcript...");
       
-      setStatusMessage("Transcribing content...");
-      await new Promise(r => setTimeout(r, 2000));
-      
+      const response = await fetch("/api/process", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: values.url }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || "Failed to process video");
+      }
+
       setStatusMessage("Syncing to Ragie knowledge base...");
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 800));
 
       setStatus("success");
-      setResult(`transcript_${Math.random().toString(36).substring(7)}.txt`);
+      setResult(data.filename);
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       setStatus("error");
-      setStatusMessage("Failed to process video. Please try again.");
+      setErrorMessage(error.message || "Failed to process video. Please try again.");
     }
   };
 
@@ -66,11 +76,11 @@ export default function Home() {
         className="text-center mb-12 space-y-4 max-w-2xl mx-auto"
       >
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Badge variant="outline" className="px-3 py-1 rounded border-accent text-accent bg-accent/5 text-xs font-medium tracking-wide uppercase">
+          <Badge variant="outline" className="px-3 py-1 rounded border-accent text-accent bg-accent/5 text-xs font-medium tracking-wide uppercase" data-testid="badge-internal-tool">
             Internal Tool
           </Badge>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground" data-testid="heading-title">
           Gus Transcript Pipeline
         </h1>
         <div className="flex items-center justify-center gap-3 text-lg text-muted-foreground font-medium">
@@ -101,6 +111,7 @@ export default function Home() {
                             placeholder="Paste YouTube URL here..." 
                             {...field} 
                             disabled={status === "processing"}
+                            data-testid="input-youtube-url"
                             className="h-12 pl-4 text-base bg-background border-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary transition-all rounded shadow-sm"
                           />
                         </div>
@@ -113,6 +124,7 @@ export default function Home() {
                 <Button 
                   type="submit" 
                   disabled={status === "processing"}
+                  data-testid="button-process"
                   className="w-full h-12 text-base font-medium rounded bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all active:scale-[0.99]"
                 >
                   {status === "processing" ? (
@@ -128,7 +140,6 @@ export default function Home() {
             </Form>
           </CardContent>
           
-          {/* Status Bar */}
           <div className="bg-muted/50 border-t border-border p-6 min-h-[100px] flex items-center justify-center">
             <AnimatePresence mode="wait">
               {status === "idle" && (
@@ -137,6 +148,7 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="text-muted-foreground text-sm"
+                  data-testid="status-idle"
                 >
                   Ready to process transcripts
                 </motion.p>
@@ -149,6 +161,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   className="flex flex-col items-center gap-2"
+                  data-testid="status-processing"
                 >
                   <Loader2 className="w-5 h-5 text-primary animate-spin" />
                   <p className="text-foreground font-medium text-sm animate-pulse">
@@ -164,12 +177,13 @@ export default function Home() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex flex-col items-center gap-2 text-green-600 dark:text-green-500"
+                  data-testid="status-success"
                 >
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5" />
                     <span className="font-semibold text-sm">Successfully Synced!</span>
                   </div>
-                  <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded border border-border">
+                  <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded border border-border" data-testid="text-filename">
                     {result}
                   </code>
                 </motion.div>
@@ -182,12 +196,13 @@ export default function Home() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex flex-col items-center gap-1 text-destructive"
+                  data-testid="status-error"
                 >
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-5 h-5" />
-                    <span className="font-semibold text-sm">Error Processing Video</span>
+                    <span className="font-semibold text-sm">Error</span>
                   </div>
-                  <p className="text-xs text-destructive/80">Please check the URL and try again.</p>
+                  <p className="text-xs text-destructive/80 text-center">{errorMessage}</p>
                 </motion.div>
               )}
             </AnimatePresence>
