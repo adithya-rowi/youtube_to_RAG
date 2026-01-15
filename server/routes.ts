@@ -10,6 +10,41 @@ const processRequestSchema = z.object({
   url: z.string().url(),
 });
 
+async function getVideoTitle(videoId: string): Promise<string> {
+  try {
+    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`);
+    const html = await response.text();
+
+    // Try og:title meta tag first
+    const ogTitleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/);
+    if (ogTitleMatch && ogTitleMatch[1]) {
+      return ogTitleMatch[1];
+    }
+
+    // Fall back to <title> tag
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+    if (titleMatch && titleMatch[1]) {
+      // Remove " - YouTube" suffix
+      return titleMatch[1].replace(/ - YouTube$/, "").trim();
+    }
+
+    return "Unknown Title";
+  } catch (error) {
+    console.error("Failed to fetch video title:", error);
+    return "Unknown Title";
+  }
+}
+
+function sanitizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special chars
+    .replace(/\s+/g, "-") // Spaces to hyphens
+    .replace(/-+/g, "-") // Multiple hyphens to single
+    .substring(0, 30) // Max 30 chars
+    .replace(/-$/, ""); // Remove trailing hyphen
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -50,17 +85,21 @@ export async function registerRoutes(
         return res.status(404).json({ error: "No transcript available for this video" });
       }
 
+      // Fetch video title
+      const videoTitle = await getVideoTitle(videoId);
+
       const transcriptText = transcriptItems
         .map((item) => item.text)
         .join(" ");
 
-      const filename = `transcript_${videoId}_${Date.now()}.md`;
+      const sanitizedTitle = sanitizeTitle(videoTitle);
+      const filename = `gus_${sanitizedTitle}_${videoId}.md`;
 
       // Format as markdown
-      const markdownContent = `# YouTube Transcript
+      const markdownContent = `# ${videoTitle}
 
+**Source:** ${url}
 **Video ID:** ${videoId}
-**URL:** ${url}
 **Language:** ${language}
 **Extracted:** ${new Date().toISOString()}
 
@@ -75,7 +114,7 @@ ${transcriptText}
       const savedTranscript = await storage.createTranscript({
         youtubeUrl: url,
         videoId,
-        videoTitle: null,
+        videoTitle,
         transcriptText,
         filename,
         status: driveResult.success ? "success" : "local_only",
@@ -84,6 +123,7 @@ ${transcriptText}
       return res.json({
         success: true,
         filename,
+        videoTitle,
         transcriptId: savedTranscript.id,
         content: markdownContent,
         language,
